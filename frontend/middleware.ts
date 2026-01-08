@@ -63,11 +63,15 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   } else if (pathname.startsWith("/account") || pathname.startsWith("/orders") || pathname.startsWith("/checkout")) {
-    // Customer routes - require any authenticated user
+    // Customer routes - require authenticated customer role
     if (!accessToken) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    if (role !== "customer") {
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 

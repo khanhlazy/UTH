@@ -37,7 +37,7 @@ export default function AppShellProtected({ children, allowedRoles }: AppShellPr
     }
 
     // Check role if specified
-    if (allowedRoles && role && !allowedRoles.includes(role)) {
+    if (allowedRoles && (!role || !allowedRoles.includes(role))) {
       router.push("/");
       return;
     }
