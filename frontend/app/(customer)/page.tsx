@@ -61,64 +61,88 @@ export default function HomePage() {
 
   const heroImageUrl =
     normalizeImageUrl(heroSettings?.imageUrl) || "/images/hero/hero-banner.jpg";
+  const heroButtonText = heroSettings?.buttonText || "Mua Sắm Ngay";
+  const heroButtonLink = heroSettings?.buttonLink || "/products";
 
   return (
     <div className="min-h-screen w-full bg-background font-sans text-secondary-900">
       {/* 1. HERO SECTION - Full Width */}
-      <section className="width-full">
+      <section className="relative width-full">
         <HeroBanner
           imageUrl={heroImageUrl}
           title={heroSettings?.title || "Sống Đẳng Cấp"}
           subtitle={heroSettings?.subtitle || "Nội Thất Tinh Tế"}
           description="Khám phá bộ sưu tập nội thất độc quyền, nâng tầm không gian sống của bạn."
-          buttonText="Mua Sắm Ngay"
-          buttonLink="/products"
+          buttonText={heroButtonText}
+          buttonLink={heroButtonLink}
           className="shadow-none rounded-none"
         />
+        <div className="absolute inset-x-0 bottom-0 translate-y-1/2">
+          <PageShell>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white shadow-2xl rounded-2xl p-6 border border-secondary-100">
+              {[
+                { label: "Khách Hàng", value: "25K+", note: "Khắp Việt Nam" },
+                { label: "Bộ Sưu Tập", value: "1.2K", note: "Phong cách đa dạng" },
+                { label: "Đánh Giá", value: "4.9/5", note: "Uy tín lâu dài" },
+              ].map((item) => (
+                <div key={item.label} className="text-center">
+                  <p className="text-2xl font-semibold text-secondary-900">
+                    {item.value}
+                  </p>
+                  <p className="text-xs uppercase tracking-widest text-secondary-400 mt-1">
+                    {item.label}
+                  </p>
+                  <p className="text-sm text-secondary-600 mt-2">
+                    {item.note}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </PageShell>
+        </div>
       </section>
 
       {/* 2. TRUST SIGNALS - Minimal */}
-      <section className="bg-white border-b border-secondary-100 py-8">
+      <section className="bg-white border-b border-secondary-100 pt-24 pb-10">
         <PageShell>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="flex items-center gap-4 justify-center md:justify-start">
-              <span className="text-3xl">🛡️</span>
-              <div className="text-left">
-                <h4 className="font-semibold text-sm uppercase tracking-wide">
-                  Bảo hành 2 năm
-                </h4>
-                <p className="text-xs text-secondary-500">Cho mọi sản phẩm</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                icon: "🛡️",
+                title: "Bảo hành 2 năm",
+                description: "An tâm sử dụng",
+              },
+              {
+                icon: "🚚",
+                title: "Miễn phí vận chuyển",
+                description: "Đơn hàng > 5 triệu",
+              },
+              {
+                icon: "💳",
+                title: "Trả góp 0%",
+                description: "Thủ tục nhanh gọn",
+              },
+              {
+                icon: "📞",
+                title: "Hỗ trợ 24/7",
+                description: "Hotline: 1900 xxxx",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="flex items-center gap-4 bg-secondary-50 rounded-xl p-4 border border-secondary-100"
+              >
+                <span className="text-3xl">{item.icon}</span>
+                <div>
+                  <h4 className="font-semibold text-sm uppercase tracking-wide">
+                    {item.title}
+                  </h4>
+                  <p className="text-xs text-secondary-500">
+                    {item.description}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4 justify-center md:justify-start">
-              <span className="text-3xl">🚚</span>
-              <div>
-                <h4 className="font-semibold text-sm uppercase tracking-wide">
-                  Miễn phí vẫn chuyển
-                </h4>
-                <p className="text-xs text-secondary-500">
-                  Đơn hàng &gt; 5 triệu
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 justify-center md:justify-start">
-              <span className="text-3xl">💳</span>
-              <div>
-                <h4 className="font-semibold text-sm uppercase tracking-wide">
-                  Trả góp 0%
-                </h4>
-                <p className="text-xs text-secondary-500">Thủ tục đơn giản</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 justify-center md:justify-start">
-              <span className="text-3xl">📞</span>
-              <div>
-                <h4 className="font-semibold text-sm uppercase tracking-wide">
-                  Hỗ trợ 24/7
-                </h4>
-                <p className="text-xs text-secondary-500">Hotline: 1900 xxxx</p>
-              </div>
-            </div>
+            ))}
           </div>
         </PageShell>
       </section>
@@ -149,7 +173,7 @@ export default function HomePage() {
               >
                 {category.image ? (
                   <Image
-                    src={category.image}
+                    src={normalizeImageUrl(category.image) || category.image}
                     alt={category.name}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -244,7 +268,53 @@ export default function HomePage() {
         </div>
       </Section>
 
-      {/* 6. PROMOTION BANNER */}
+      {/* 6. INSPIRATION LOOKBOOK */}
+      <Section>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-5 space-y-6">
+            <span className="text-primary-600 font-bold tracking-widest text-xs uppercase">
+              Inspiration
+            </span>
+            <Heading level={2} className="leading-tight">
+              Biến Không Gian Thành <br /> Nơi Bạn Muốn Trở Về
+            </Heading>
+            <p className="text-secondary-500 leading-relaxed">
+              Gợi ý phối hợp sofa, bàn trà và decor theo xu hướng mới. Mỗi góc
+              nhà là một tuyên ngôn phong cách riêng.
+            </p>
+            <Link href="/products?sort=newest">
+              <Button variant="outline" size="lg">
+                Khám phá bộ sưu tập
+              </Button>
+            </Link>
+          </div>
+          <div className="lg:col-span-7 grid grid-cols-2 gap-4">
+            {[
+              "/images/hero/hero-banner.jpg",
+              "https://images.unsplash.com/photo-1501045661006-fcebe0257c3f?auto=format&fit=crop&w=600&q=80",
+              "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80",
+              "https://images.unsplash.com/photo-1549187774-b4e9b0445b41?auto=format&fit=crop&w=600&q=80",
+            ].map((src, index) => (
+              <div
+                key={src}
+                className={`relative overflow-hidden rounded-2xl ${
+                  index === 0 ? "row-span-2 h-full" : "h-40 md:h-48"
+                }`}
+              >
+                <Image
+                  src={src}
+                  alt="Không gian nội thất"
+                  fill
+                  className="object-cover transition-transform duration-700 hover:scale-105"
+                  sizes="(max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* 7. PROMOTION BANNER */}
       <section className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-primary-900" />
         <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-overlay" />
@@ -269,7 +339,7 @@ export default function HomePage() {
         </PageShell>
       </section>
 
-      {/* 7. REVIEWS (Simple Cards) */}
+      {/* 8. REVIEWS (Simple Cards) */}
       {recentReviews && recentReviews.length > 0 && (
         <Section>
           <Heading level={2} className="text-center mb-12">
