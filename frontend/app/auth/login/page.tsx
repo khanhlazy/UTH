@@ -14,6 +14,7 @@ import PasswordInput from "@/components/ui/PasswordInput";
 import { notifications } from "@/lib/notifications";
 import type { z } from "zod";
 import AuthLayout from "@/components/layouts/AuthLayout";
+import { getDashboardRoute } from "@/lib/auth/roles";
 
 // Remove AUTH_BG_IMAGE as it's in AuthLayout
 
@@ -52,12 +53,7 @@ function LoginForm() {
         response.user.role
       );
 
-      const dashboardLink =
-        response.user.role === "admin" ? "/admin" :
-          response.user.role === "branch_manager" ? "/manager" :
-            response.user.role === "employee" ? "/employee" :
-              response.user.role === "shipper" ? "/shipper" :
-                redirect;
+      const dashboardLink = redirect !== "/" ? redirect : getDashboardRoute(response.user.role);
 
       setTimeout(() => {
         router.push(dashboardLink);
