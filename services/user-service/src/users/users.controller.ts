@@ -9,6 +9,7 @@ import {
   UseGuards,
   NotFoundException,
   Query,
+  ForbiddenException,
 } from "@nestjs/common";
 import { Role } from "@shared/config/rbac-matrix";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
@@ -54,8 +55,23 @@ export class UsersController {
   @Roles(Role.ADMIN, Role.BRANCH_MANAGER)
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: "Lấy danh sách người dùng (Admin/Manager)" })
-  async findAll(@Query("role") role?: string) {
-    const users = await this.usersService.findAll(role);
+  async findAll(@CurrentUser() currentUser: any, @Query("role") role?: string) {
+    if (currentUser?.role === Role.BRANCH_MANAGER) {
+      if (!currentUser?.branchId) {
+        throw new ForbiddenException("Branch manager phải được gán cho một chi nhánh");
+      }
+      const allowedRoles = [Role.EMPLOYEE, Role.SHIPPER];
+      if (role && !allowedRoles.includes(role as Role)) {
+        throw new ForbiddenException("Branch manager chỉ được xem nhân viên và shipper của chi nhánh mình");
+      }
+      const users = await this.usersService.findAll({
+        role: role || allowedRoles,
+        branchId: currentUser.branchId,
+      });
+      return users.map((u) => this.formatUserResponse(u));
+    }
+
+    const users = await this.usersService.findAll({ role });
     return users.map((u) => this.formatUserResponse(u));
   }
 
@@ -86,7 +102,27 @@ export class UsersController {
   @Roles(Role.ADMIN, Role.BRANCH_MANAGER)
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: "Cập nhật thông tin người dùng (Admin/Manager)" })
-  async update(@Param("id") id: string, @Body() updateDto: UpdateUserDto) {
+  async update(@Param("id") id: string, @Body() updateDto: UpdateUserDto, @CurrentUser() currentUser: any) {
+    if (currentUser?.role === Role.BRANCH_MANAGER) {
+      if (!currentUser?.branchId) {
+        throw new ForbiddenException("Branch manager phải được gán cho một chi nhánh");
+      }
+      const targetUser = await this.usersService.findById(id);
+      if (!targetUser) {
+        throw new NotFoundException("Không tìm thấy người dùng");
+      }
+      const allowedRoles = [Role.EMPLOYEE, Role.SHIPPER];
+      if (!allowedRoles.includes(targetUser.role as Role)) {
+        throw new ForbiddenException("Branch manager chỉ được quản lý nhân viên và shipper");
+      }
+      if (targetUser.branchId?.toString() !== currentUser.branchId) {
+        throw new ForbiddenException("Branch manager chỉ được quản lý nhân sự trong chi nhánh của mình");
+      }
+      if (updateDto.role && !allowedRoles.includes(updateDto.role as Role)) {
+        throw new ForbiddenException("Branch manager không được đổi role ngoài phạm vi nhân viên/shipper");
+      }
+      updateDto.branchId = currentUser.branchId;
+    }
     const user = await this.usersService.update(id, updateDto);
     if (!user) {
       throw new NotFoundException("Không tìm thấy người dùng");

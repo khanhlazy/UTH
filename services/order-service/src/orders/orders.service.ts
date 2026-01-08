@@ -14,6 +14,7 @@ export class OrdersService {
   private readonly WAREHOUSE_SERVICE_URL = process.env.WAREHOUSE_SERVICE_URL || 'http://warehouse-service:3009';
   private readonly USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service:3003';
   private readonly PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || 'http://product-service:3004';
+  private readonly ROUTING_SERVICE_URL = process.env.ROUTING_SERVICE_URL || 'https://router.project-osrm.org/route/v1/driving';
 
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
@@ -82,10 +83,11 @@ export class OrdersService {
     // 0.1: Order bắt buộc có branch_id - Tìm chi nhánh có đủ hàng
     let selectedBranchId: string | undefined;
     
-    // Strategy 1: Nếu có tọa độ, tìm chi nhánh gần nhất có đủ hàng
+    // Strategy 1: Nếu có tọa độ, quét 2 chi nhánh gần nhất theo đường chim bay
+    // rồi call API định tuyến để chọn chi nhánh gần nhất theo đường đi thực tế
     if (createOrderDto.shippingCoordinates?.lat && createOrderDto.shippingCoordinates?.lng) {
       try {
-        const branchServiceUrl = `${this.BRANCH_SERVICE_URL}/api/branches/nearest/single`;
+        const branchServiceUrl = `${this.BRANCH_SERVICE_URL}/api/branches/nearest`;
         const response = await firstValueFrom(
           this.httpService.get(branchServiceUrl, {
             params: {
@@ -94,9 +96,35 @@ export class OrdersService {
             },
           }),
         );
-        
-        const candidateBranchId = response.data?.data?._id || response.data?._id;
-        if (candidateBranchId) {
+
+        const candidateBranches = (response.data?.data || response.data || []) as any[];
+        const branchesWithCoords = candidateBranches.filter((branch) =>
+          branch?.address?.coordinates?.lat && branch?.address?.coordinates?.lng
+        );
+
+        const routedCandidates: Array<{ branch: any; distanceKm: number | null }> = [];
+        for (const branch of branchesWithCoords) {
+          const distanceKm = await this.getRouteDistanceKm(
+            createOrderDto.shippingCoordinates.lat,
+            createOrderDto.shippingCoordinates.lng,
+            branch.address.coordinates.lat,
+            branch.address.coordinates.lng,
+          );
+          routedCandidates.push({ branch, distanceKm });
+        }
+
+        const sortedCandidates = routedCandidates
+          .filter((candidate) => candidate.distanceKm !== null)
+          .sort((a, b) => (a.distanceKm as number) - (b.distanceKm as number))
+          .map((candidate) => candidate.branch);
+
+        const fallbackCandidates = sortedCandidates.length > 0 ? sortedCandidates : branchesWithCoords;
+
+        for (const branch of fallbackCandidates) {
+          const candidateBranchId = branch._id || branch.id;
+          if (!candidateBranchId) {
+            continue;
+          }
           // Verify branch has enough stock for all items
           let hasEnoughStock = true;
           for (const item of createOrderDto.items) {
@@ -114,7 +142,8 @@ export class OrdersService {
           }
           if (hasEnoughStock) {
             selectedBranchId = candidateBranchId;
-            this.logger.log(`Đã chọn chi nhánh có đủ hàng: ${selectedBranchId}`);
+            this.logger.log(`Đã chọn chi nhánh gần nhất có đủ hàng: ${selectedBranchId}`);
+            break;
           }
         }
       } catch (error) {
@@ -239,6 +268,28 @@ export class OrdersService {
 
     // Populate order before returning
     return this.findById(order._id.toString());
+  }
+
+  private async getRouteDistanceKm(
+    originLat: number,
+    originLng: number,
+    destLat: number,
+    destLng: number,
+  ): Promise<number | null> {
+    try {
+      const url = `${this.ROUTING_SERVICE_URL}/${originLng},${originLat};${destLng},${destLat}`;
+      const response = await firstValueFrom(
+        this.httpService.get(url, { params: { overview: 'false' } }),
+      );
+      const distanceMeters = response.data?.routes?.[0]?.distance;
+      if (typeof distanceMeters !== 'number') {
+        return null;
+      }
+      return distanceMeters / 1000;
+    } catch (error: any) {
+      this.logger.warn('Không thể lấy khoảng cách định tuyến', error?.message || error);
+      return null;
+    }
   }
 
   async findByCustomerId(customerId: string): Promise<any[]> {
@@ -885,4 +936,3 @@ export class OrdersService {
     return this.findById(orderId);
   }
 }
-
