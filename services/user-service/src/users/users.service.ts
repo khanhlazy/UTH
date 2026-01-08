@@ -26,10 +26,13 @@ export class UsersService {
     });
   }
 
-  async findAll(role?: string): Promise<UserDocument[]> {
+  async findAll(filters?: { role?: string | string[]; branchId?: string }): Promise<UserDocument[]> {
     const query: any = { deletedAt: { $exists: false } }; // 8: Soft delete
-    if (role) {
-      query.role = role;
+    if (filters?.role) {
+      query.role = Array.isArray(filters.role) ? { $in: filters.role } : filters.role;
+    }
+    if (filters?.branchId) {
+      query.branchId = filters.branchId;
     }
     return this.userModel.find(query);
   }
