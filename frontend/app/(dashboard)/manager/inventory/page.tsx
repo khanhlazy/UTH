@@ -57,35 +57,65 @@ export default function ManagerInventoryPage() {
   const { data, isLoading, isError, refetch } = useQuery<LocalInventoryItem[]>({
     queryKey: ["manager", "inventory", branchId],
     queryFn: async () => {
+      let inventoryItems: LocalInventoryItem[] = [];
+
       // Try to get inventory from branch service first
       try {
         const branchInventory = await branchService.getBranchInventory(branchId || "");
         if (branchInventory && branchInventory.length > 0) {
-          return branchInventory as unknown as LocalInventoryItem[];
+          inventoryItems = branchInventory as unknown as LocalInventoryItem[];
         }
       } catch (error) {
         console.log("Branch inventory not available, trying warehouse service");
       }
-      // Get inventory filtered by branchId
-      try {
-        const warehouseInventory = await warehouseService.getInventory(branchId || undefined);
-        return warehouseInventory.map((item) => ({
-          id: item.id,
-          productId: item.productId,
-          product: item.product || { id: item.productId, name: "N/A" },
-          quantity: item.quantity || 0,
-          reservedQuantity: item.reservedQuantity || 0,
-          availableQuantity: item.availableQuantity || 0,
-          minStockLevel: item.minStockLevel || 10,
-          maxStockLevel: item.maxStockLevel || 100,
-          location: item.location || "Kho chính",
-          status: (item.availableQuantity || 0) > (item.minStockLevel || 10) ? "in_stock" : "low_stock",
-          lastUpdated: (item as { updatedAt?: string }).updatedAt || new Date().toISOString(),
-        })) as LocalInventoryItem[];
-      } catch (error) {
-        console.error("Error fetching inventory:", error);
-        return [];
+
+      // If no branch inventory, try warehouse service
+      if (inventoryItems.length === 0) {
+        try {
+          const warehouseInventory = await warehouseService.getInventory(branchId || undefined);
+          inventoryItems = warehouseInventory.map((item) => ({
+            id: item.id,
+            productId: item.productId,
+            product: item.product || { id: item.productId, name: (item as any).productName || "N/A" },
+            quantity: item.quantity || 0,
+            reservedQuantity: item.reservedQuantity || 0,
+            availableQuantity: item.availableQuantity || 0,
+            minStockLevel: item.minStockLevel || 10,
+            maxStockLevel: item.maxStockLevel || 100,
+            location: item.location || "Kho chính",
+            status: (item.availableQuantity || 0) > (item.minStockLevel || 10) ? "in_stock" : "low_stock",
+            lastUpdated: (item as { updatedAt?: string }).updatedAt || new Date().toISOString(),
+          })) as LocalInventoryItem[];
+        } catch (error) {
+          console.error("Error fetching inventory:", error);
+          return [];
+        }
       }
+
+      // Encode/Enrich data: If name is "N/A" or missing, try to fetch from product service
+      if (inventoryItems.length > 0) {
+        const enrichedItems = await Promise.all(
+          inventoryItems.map(async (item) => {
+            if (!item.product?.name || item.product.name === "N/A") {
+              try {
+                // Fetch product details to get the name
+                const product = await productService.getProduct(item.productId);
+                return {
+                  ...item,
+                  product: { ...item.product, id: product.id, name: product.name },
+                };
+              } catch (err) {
+                // If fetch fails, keep original item
+                return item;
+              }
+            }
+            return item;
+          })
+        );
+        return enrichedItems;
+      }
+
+      return inventoryItems;
     },
     enabled: !!branchId,
   });

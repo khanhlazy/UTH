@@ -99,6 +99,7 @@ export const Product = mongoose.model('Product', ProductSchema);
 // 5. INVENTORY / WAREHOUSE
 export const WarehouseSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
+    productName: { type: String, required: true }, // Added missing field
     branchId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Branch' },
     quantity: { type: Number, required: true, default: 0 },
     reservedQuantity: { type: Number, default: 0 },

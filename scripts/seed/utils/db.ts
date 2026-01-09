@@ -1,7 +1,7 @@
 
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://admin:admin123@localhost:27017/furnimart?authSource=admin';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://admin:admin123@127.0.0.1:27017/furnimart?authSource=admin';
 
 export async function connectDB() {
     if (mongoose.connection.readyState === 1) {

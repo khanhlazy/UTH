@@ -28,9 +28,11 @@ export async function seedInventory() {
       // Randomize stock per branch to look realistic
       // Branch 1 (Code B001 - Central) has more stock
       const isCentral = branch.code === "B001";
-      const quantity = isCentral
+      // Introduce some out-of-stock items (quantity 0) for testing
+      const isOutOfStock = Math.random() < 0.1; // 10% chance
+      const quantity = isOutOfStock ? 0 : (isCentral
         ? generateRandomInt(50, 200)
-        : generateRandomInt(10, 50);
+        : generateRandomInt(10, 50));
 
       const reservedQuantity = generateRandomInt(0, 5); // Some items might be reserved
       const availableQuantity = quantity - reservedQuantity;
