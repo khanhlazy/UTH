@@ -17,7 +17,7 @@ export class PaymentService {
   private vnp_HashSecret = process.env.VNP_HASH_SECRET || 'HUOUL72ZW06UZRY5ZG6D8QARXPQ1ZDDR';
   private vnp_Url = process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
   private vnp_ReturnUrl = process.env.VNP_RETURN_URL || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/return`;
-  private vnp_IpnUrl = process.env.VNP_IPN_URL || `${process.env.API_GATEWAY_URL || 'http://localhost:3001'}/api/payment/ipn`;
+  private vnp_IpnUrl = process.env.VNP_IPN_URL || `${process.env.API_GATEWAY_URL || 'http://localhost:3001'}/api/payments/ipn`;
 
   constructor(
     @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
