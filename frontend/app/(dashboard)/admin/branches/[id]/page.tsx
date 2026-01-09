@@ -14,17 +14,14 @@ import ErrorState from "@/components/ui/ErrorState";
 import { FiEdit, FiMapPin, FiPhone, FiMail, FiUsers, FiBox, FiDollarSign, FiShoppingBag } from "react-icons/fi";
 import { formatCurrency } from "@/lib/format";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { Tab } from "@headlessui/react";
-import classNames from "classnames";
-
-function classNamesFunc(...classes: string[]) {
-    return classes.filter(Boolean).join(" ");
-}
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 export default function BranchDetailPage() {
     const params = useParams();
     const id = params.id as string;
     const router = useRouter();
+    const [selectedTab, setSelectedTab] = useState<'employees' | 'inventory'>('employees');
 
     const { data: branch, isLoading: loadingBranch, isError: errorBranch } = useQuery({
         queryKey: ["admin", "branch", id],
@@ -193,60 +190,67 @@ export default function BranchDetailPage() {
             </div>
 
             <div className="w-full">
-                <Tab.Group>
-                    <Tab.List className="flex space-x-1 rounded-xl bg-stone-100 p-1 max-w-md">
-                        {['Nhân viên', 'Kho hàng'].map((category) => (
-                            <Tab
-                                key={category}
-                                className={({ selected }) =>
-                                    classNamesFunc(
-                                        'w-full rounded-lg py-2.5 text-sm font-medium leading-5',
-                                        'ring-white ring-opacity-60 ring-offset-2 ring-offset-primary-400 focus:outline-none focus:ring-2',
-                                        selected
-                                            ? 'bg-white text-primary-700 shadow'
-                                            : 'text-stone-500 hover:bg-white/[0.12] hover:text-stone-700'
-                                    )
-                                }
-                            >
-                                {category}
-                            </Tab>
-                        ))}
-                    </Tab.List>
-                    <Tab.Panels className="mt-4">
-                        <Tab.Panel>
-                            <Card>
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                                        <FiUsers className="text-primary-600" /> Danh sách nhân viên
-                                    </h3>
-                                    {/* Add User Button could go here */}
-                                </div>
-                                <DataTable
-                                    columns={employeeColumns}
-                                    data={employees}
-                                    isLoading={loadingUsers}
-                                    emptyState={<div className="p-4 text-center text-stone-500">Chưa có nhân viên nào</div>}
-                                />
-                            </Card>
-                        </Tab.Panel>
-                        <Tab.Panel>
-                            <Card>
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                                        <FiBox className="text-primary-600" /> Tồn kho hiện tại
-                                    </h3>
-                                    {/* Add Inventory Button could go here */}
-                                </div>
-                                <DataTable
-                                    columns={inventoryColumns}
-                                    data={inventoryItems}
-                                    isLoading={loadingInventory}
-                                    emptyState={<div className="p-4 text-center text-stone-500">Kho hàng trống</div>}
-                                />
-                            </Card>
-                        </Tab.Panel>
-                    </Tab.Panels>
-                </Tab.Group>
+                <div className="flex space-x-1 rounded-xl bg-stone-100 p-1 max-w-md mb-4">
+                    <button
+                        className={cn(
+                            'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all',
+                            'focus:outline-none focus:ring-2 ring-offset-2 ring-primary-400',
+                            selectedTab === 'employees'
+                                ? 'bg-white text-primary-700 shadow'
+                                : 'text-stone-500 hover:bg-white/[0.12] hover:text-stone-700'
+                        )}
+                        onClick={() => setSelectedTab('employees')}
+                    >
+                        Nhân viên
+                    </button>
+                    <button
+                        className={cn(
+                            'w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all',
+                            'focus:outline-none focus:ring-2 ring-offset-2 ring-primary-400',
+                            selectedTab === 'inventory'
+                                ? 'bg-white text-primary-700 shadow'
+                                : 'text-stone-500 hover:bg-white/[0.12] hover:text-stone-700'
+                        )}
+                        onClick={() => setSelectedTab('inventory')}
+                    >
+                        Kho hàng
+                    </button>
+                </div>
+
+                <div>
+                    {selectedTab === 'employees' && (
+                        <Card>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                    <FiUsers className="text-primary-600" /> Danh sách nhân viên
+                                </h3>
+                                {/* Add User Button could go here */}
+                            </div>
+                            <DataTable
+                                columns={employeeColumns}
+                                data={employees}
+                                isLoading={loadingUsers}
+                                emptyState={<div className="p-4 text-center text-stone-500">Chưa có nhân viên nào</div>}
+                            />
+                        </Card>
+                    )}
+                    {selectedTab === 'inventory' && (
+                        <Card>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                    <FiBox className="text-primary-600" /> Tồn kho hiện tại
+                                </h3>
+                                {/* Add Inventory Button could go here */}
+                            </div>
+                            <DataTable
+                                columns={inventoryColumns}
+                                data={inventoryItems}
+                                isLoading={loadingInventory}
+                                emptyState={<div className="p-4 text-center text-stone-500">Kho hàng trống</div>}
+                            />
+                        </Card>
+                    )}
+                </div>
             </div>
         </div>
     );
