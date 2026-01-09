@@ -2,6 +2,30 @@ import apiClient from "@/lib/apiClient";
 import { endpoints } from "@/lib/endpoints";
 import { User, Address } from "@/lib/types";
 
+type UserUpdatePayload = Partial<User> & {
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+};
+
+const normalizeUserUpdate = (data: UserUpdatePayload) => {
+  const normalized: UserUpdatePayload = { ...data };
+  if (!normalized.name) {
+    const combinedName = [normalized.firstName, normalized.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    const nameCandidate = normalized.fullName || combinedName;
+    if (nameCandidate) {
+      normalized.name = nameCandidate;
+    }
+  }
+  delete normalized.fullName;
+  delete normalized.firstName;
+  delete normalized.lastName;
+  return normalized;
+};
+
 export const userService = {
   getProfile: async (): Promise<User> => {
     const response = await apiClient.get<User>(endpoints.users.profile);
@@ -21,15 +45,18 @@ export const userService = {
     return response.data;
   },
 
-  updateProfile: async (data: Partial<User>): Promise<User> => {
-    const response = await apiClient.put<User>(endpoints.users.profile, data);
+  updateProfile: async (data: UserUpdatePayload): Promise<User> => {
+    const response = await apiClient.put<User>(
+      endpoints.users.profile,
+      normalizeUserUpdate(data)
+    );
     return response.data;
   },
 
-  updateUser: async (id: string, data: Partial<User>): Promise<User> => {
+  updateUser: async (id: string, data: UserUpdatePayload): Promise<User> => {
     const response = await apiClient.put<User>(
       endpoints.users.update(id),
-      data
+      normalizeUserUpdate(data)
     );
     return response.data;
   },
