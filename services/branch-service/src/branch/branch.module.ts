@@ -4,6 +4,7 @@ import { HttpModule } from '@nestjs/axios';
 import { BranchController } from './branch.controller';
 import { BranchService } from './branch.service';
 import { Branch, BranchSchema } from './schemas/branch.schema';
+import { Order, OrderSchema } from './schemas/order.schema';
 import { User, UserSchema } from './schemas/user.schema';
 import { AuthModule } from '@shared/common/auth/auth.module';
 
@@ -11,6 +12,7 @@ import { AuthModule } from '@shared/common/auth/auth.module';
   imports: [
     MongooseModule.forFeature([
       { name: Branch.name, schema: BranchSchema },
+      { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },
     ]),
     HttpModule,
@@ -21,4 +23,3 @@ import { AuthModule } from '@shared/common/auth/auth.module';
   exports: [BranchService],
 })
 export class BranchModule {}
-
