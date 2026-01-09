@@ -84,6 +84,7 @@ export class PaymentService {
       vnp_Params['vnp_OrderType'] = orderType === 'other' ? 'billpayment' : orderType;
       vnp_Params['vnp_Amount'] = amount * 100; // Nhân 100 để chuyển sang xu
       vnp_Params['vnp_ReturnUrl'] = this.vnp_ReturnUrl;
+      vnp_Params['vnp_IpnUrl'] = this.vnp_IpnUrl;
       vnp_Params['vnp_IpAddr'] = ipAddr;
       vnp_Params['vnp_CreateDate'] = createDate;
       vnp_Params['vnp_ExpireDate'] = expireDateStr; // Bắt buộc theo tài liệu
