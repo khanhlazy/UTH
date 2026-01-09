@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +24,7 @@ import { formatCurrency } from "@/lib/format";
 import { notifications } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import type { Address } from "@/lib/types";
+import type { AxiosError } from "axios";
 
 // Schema for shipping info
 const shippingSchema = z.object({
@@ -36,6 +37,39 @@ const shippingSchema = z.object({
 });
 
 type ShippingFormValues = z.infer<typeof shippingSchema>;
+type AddressWithId = Address & { _id?: string; id?: string };
+
+type StepIndicatorProps = {
+  num: number;
+  title: string;
+  active: boolean;
+};
+
+const StepIndicator = ({ num, title, active }: StepIndicatorProps) => (
+  <div
+    className={cn(
+      "flex items-center gap-2",
+      active ? "text-primary-600" : "text-secondary-400"
+    )}
+  >
+    <div
+      className={cn(
+        "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2",
+        active
+          ? "border-primary-600 bg-primary-50"
+          : "border-secondary-200 bg-transparent"
+      )}
+    >
+      {num}
+    </div>
+    <span
+      className={cn("font-medium hidden md:inline", active && "font-bold")}
+    >
+      {title}
+    </span>
+    {num < 3 && <div className="w-12 h-px bg-secondary-200 hidden md:block" />}
+  </div>
+);
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -78,7 +112,16 @@ export default function CheckoutPage() {
     queryFn: async () => {
       try {
         const profile = await userService.getProfile();
-        return ((profile as any)?.addresses || []) as Address[];
+        return (profile.addresses || []).map((address) => {
+          const typedAddress = address as AddressWithId;
+          return {
+            ...typedAddress,
+            id:
+              typedAddress.id ||
+              typedAddress._id ||
+              `${typedAddress.street}-${typedAddress.district}-${typedAddress.city}`,
+          };
+        });
       } catch {
         return [];
       }
@@ -105,7 +148,7 @@ export default function CheckoutPage() {
           });
           window.location.href = response.paymentUrl;
           return;
-        } catch (error: any) {
+        } catch (error: AxiosError<{ message?: string }>) {
           toast.error(
             error?.response?.data?.message ||
               "Không thể tạo thanh toán VNPay, vui lòng thử lại"
@@ -116,7 +159,7 @@ export default function CheckoutPage() {
       toast.success("Đặt hàng thành công!");
       router.push(`/orders/${data.id || data._id}`);
     },
-    onError: (err: any) => {
+    onError: (err: AxiosError<{ message?: string }>) => {
       toast.error(
         err?.response?.data?.message || "Đặt hàng thất bại, vui lòng thử lại"
       );
@@ -148,42 +191,6 @@ export default function CheckoutPage() {
       notes: data.note,
     });
   };
-
-  const StepIndicator = ({
-    num,
-    title,
-    active,
-  }: {
-    num: number;
-    title: string;
-    active: boolean;
-  }) => (
-    <div
-      className={cn(
-        "flex items-center gap-2",
-        active ? "text-primary-600" : "text-secondary-400"
-      )}
-    >
-      <div
-        className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2",
-          active
-            ? "border-primary-600 bg-primary-50"
-            : "border-secondary-200 bg-transparent"
-        )}
-      >
-        {num}
-      </div>
-      <span
-        className={cn("font-medium hidden md:inline", active && "font-bold")}
-      >
-        {title}
-      </span>
-      {num < 3 && (
-        <div className="w-12 h-px bg-secondary-200 hidden md:block" />
-      )}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-secondary-50 pb-20">

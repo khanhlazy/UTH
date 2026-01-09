@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import type { AxiosError } from "axios";
 import {
   FiEdit,
   FiMapPin,
@@ -31,16 +32,6 @@ export default function AccountPage() {
     phone: user?.phone || "",
   });
 
-  // Update formData when user changes
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        fullName: user.fullName || user.name || "",
-        phone: user.phone || "",
-      });
-    }
-  }, [user]);
-
   const updateProfileMutation = useMutation({
     mutationFn: (data: typeof formData) => userService.updateProfile(data),
     onSuccess: (updatedUser) => {
@@ -50,7 +41,7 @@ export default function AccountPage() {
       toast.success("Cập nhật thông tin thành công");
       setIsEditing(false);
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       console.error("Update profile error:", error);
       toast.error(
         error.response?.data?.message || "Không thể cập nhật thông tin"

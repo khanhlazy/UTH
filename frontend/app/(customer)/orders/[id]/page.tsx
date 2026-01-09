@@ -27,6 +27,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { disputeSchema } from "@/lib/validation";
 import { FiAlertCircle } from "react-icons/fi";
+import type { AxiosError } from "axios";
 
 type DisputeForm = {
   orderId: string;
@@ -85,7 +86,7 @@ export default function OrderDetailPage() {
       setCancelModalOpen(false);
       setCancelReason("");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error?.response?.data?.message || "Không thể hủy đơn hàng");
     },
   });
@@ -107,7 +108,7 @@ export default function OrderDetailPage() {
   );
 
   // Dispute form
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<DisputeForm>({
     resolver: zodResolver(disputeSchema),
     defaultValues: {
       orderId: orderId,
@@ -118,7 +119,7 @@ export default function OrderDetailPage() {
   });
 
   const createDisputeMutation = useMutation({
-    mutationFn: (data: any) => disputeService.create(data),
+    mutationFn: (data: DisputeForm) => disputeService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dispute", "order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["disputes", "my"] });
@@ -126,12 +127,12 @@ export default function OrderDetailPage() {
       setDisputeModalOpen(false);
       reset();
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error?.response?.data?.message || "Không thể tạo yêu cầu hỗ trợ");
     },
   });
 
-  const onSubmitDispute = (data: any) => {
+  const onSubmitDispute = (data: DisputeForm) => {
     createDisputeMutation.mutate(data);
   };
 
@@ -473,4 +474,3 @@ export default function OrderDetailPage() {
     </PageShell>
   );
 }
-

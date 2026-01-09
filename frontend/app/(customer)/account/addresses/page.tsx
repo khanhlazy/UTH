@@ -21,6 +21,7 @@ import ErrorState from "@/components/ui/ErrorState";
 import { toast } from "react-toastify";
 import { FiMapPin, FiEdit, FiTrash2, FiPlus, FiCheck } from "react-icons/fi";
 import { Address, User } from "@/lib/types";
+import type { AxiosError } from "axios";
 
 type AddressForm = z.infer<typeof addressSchema>;
 
@@ -88,7 +89,7 @@ export default function AddressesPage() {
       setEditingAddress(null);
       reset();
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       const message =
         error?.response?.data?.message ||
         error?.message ||
