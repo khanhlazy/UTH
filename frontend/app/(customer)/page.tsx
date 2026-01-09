@@ -67,7 +67,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen w-full bg-background font-sans text-secondary-900">
       {/* 1. HERO SECTION - Full Width */}
-      <section className="relative width-full">
+      <section className="relative w-full">
         <HeroBanner
           imageUrl={heroImageUrl}
           title={heroSettings?.title || "Sống Đẳng Cấp"}
