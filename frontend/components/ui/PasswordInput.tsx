@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, forwardRef } from "react";
 import Input from "./Input";
 import { FiEye, FiEyeOff } from "react-icons/fi";
