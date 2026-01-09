@@ -198,8 +198,7 @@ export class WalletController {
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Lấy tất cả ví (Admin)' })
   async getAllWallets(@Query() filters: any) {
-    // This would require additional service method
-    return { message: 'Get all wallets - to be implemented' };
+    return this.walletService.getAllWallets(filters);
   }
 
   @Get('withdrawals/pending')
