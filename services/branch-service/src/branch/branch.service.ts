@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { Branch, BranchDocument } from './schemas/branch.schema';
+import { Order, OrderDocument } from './schemas/order.schema';
 import { CreateBranchDto, UpdateBranchDto, ApproveBranchDto } from './dtos/branch.dto';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class BranchService {
 
   constructor(
     @InjectModel(Branch.name) private branchModel: Model<BranchDocument>,
+    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     private httpService: HttpService,
   ) {}
 
@@ -51,7 +53,39 @@ export class BranchService {
       query['address.district'] = filters.district;
     }
 
-    return this.branchModel.find(query).populate('managerId', 'name email phone').exec();
+    const branches = await this.branchModel.find(query).populate('managerId', 'name email phone').exec();
+
+    if (branches.length === 0) {
+      return branches;
+    }
+
+    const branchStats = await this.orderModel.aggregate([
+      {
+        $group: {
+          _id: '$branchId',
+          totalOrders: { $sum: 1 },
+          totalRevenue: {
+            $sum: {
+              $cond: ['$isPaid', '$totalPrice', 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    const statsByBranchId = new Map(
+      branchStats.map((stat) => [stat._id?.toString(), stat]),
+    );
+
+    return branches.map((branch) => {
+      const stats = statsByBranchId.get(branch._id.toString());
+      if (!stats) {
+        return branch;
+      }
+      branch.totalOrders = stats.totalOrders ?? branch.totalOrders ?? 0;
+      branch.totalRevenue = stats.totalRevenue ?? branch.totalRevenue ?? 0;
+      return branch;
+    });
   }
 
   async findById(id: string): Promise<Branch> {
@@ -286,4 +320,3 @@ export class BranchService {
     return nearestBranches.length > 0 ? nearestBranches[0] : null;
   }
 }
-
