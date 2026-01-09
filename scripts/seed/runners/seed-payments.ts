@@ -4,29 +4,35 @@ import { Payment, Order, User } from '../utils/models';
 export async function seedPayments() {
     console.log('💳 Seeding Payments...');
 
-    const orderDelivered = await Order.findOne({ orderNumber: 'ORD-001-DELIVERED' });
+    const orders = await Order.find({ paymentStatus: 'PAID' });
     const alice = await User.findOne({ email: 'customer1@gmail.com' });
 
-    if (!orderDelivered || !alice) {
-        console.warn('⚠️ Skipping Payments seed: Missing Order or User.');
+    if (orders.length === 0 || !alice) {
+        console.warn('⚠️ Skipping Payments seed: Missing paid orders or user.');
         return;
     }
 
-    // Payment for the delivered order
-    const paymentData = {
-        orderId: orderDelivered._id,
-        userId: alice._id,
-        amount: orderDelivered.totalAmount,
-        provider: 'VNPAY',
-        status: 'SUCCESS',
-        transactionId: 'VNPAY_123456789',
-    };
+    const results = [];
+    for (const order of orders) {
+        // Payment for paid orders
+        const paymentData = {
+            orderId: order._id.toString(),
+            customerId: order.customerId.toString(),
+            amount: order.totalPrice,
+            method: 'vnpay',
+            status: 'paid',
+            transactionId: 'VNPAY_' + order._id.toString().slice(-8),
+            completedAt: order.createdAt,
+        };
 
-    await Payment.findOneAndUpdate(
-        { transactionId: paymentData.transactionId },
-        paymentData,
-        { upsert: true, new: true }
-    );
+        const payment = await Payment.findOneAndUpdate(
+            { orderId: order._id },
+            paymentData,
+            { upsert: true, new: true }
+        );
+        results.push(payment);
+    }
 
-    console.log('✅ Seeded Payments.');
+    console.log(`✅ Seeded ${results.length} payments.`);
+    return results;
 }

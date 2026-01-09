@@ -9,27 +9,22 @@ export async function seedWallets() {
 
     for (const user of users) {
         const walletData = {
-            userId: user._id,
+            userId: user._id.toString(),
             balance: 5000000, // 5 million VND default balance
-            currency: 'VND',
-            transactions: [
-                {
-                    type: 'TOPUP',
-                    amount: 5000000,
-                    description: 'Welcome Bonus',
-                    status: 'COMPLETED',
-                    createdAt: new Date(),
-                }
-            ]
+            lockedBalance: 0,
+            totalDeposited: 5000000,
+            totalWithdrawn: 0,
+            isActive: true,
         };
 
         const wallet = await Wallet.findOneAndUpdate(
-            { userId: user._id },
+            { userId: user._id.toString() },
             walletData,
             { upsert: true, new: true }
         );
         results.push(wallet);
     }
 
-    console.log(`✅ Seeded Wallets for ${results.length} customers.`);
+    console.log(`✅ Seeded ${results.length} wallets for customers.`);
+    return results;
 }

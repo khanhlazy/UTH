@@ -69,23 +69,25 @@ export const Category = mongoose.model('Category', CategorySchema);
 
 // 4. PRODUCTS
 export const ProductSchema = new mongoose.Schema({
-    sku: { type: String, required: true, unique: true },
+    // sku: { type: String, required: true, unique: true }, // Service does not use SKU
     name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true }, // Added slug
+    slug: { type: String }, // Optional in seed if not used by service logic strictly
     description: { type: String, required: true },
     price: { type: Number, required: true },
-    compareAtPrice: Number, // Original price before sale
+    discount: { type: Number, default: 0 },
+    stock: { type: Number, default: 0 },
     images: [String],
     categoryId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Category' },
     category: { type: String, required: true }, // Denormalized name
-    material: String,
+    materials: [String],
+    colors: [String],
     dimensions: {
         length: Number,
         width: Number,
         height: Number,
         unit: String,
     },
-    tags: [String],
+    // tags: [String],
     isFeatured: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     rating: { type: Number, default: 0 },
@@ -99,8 +101,11 @@ export const WarehouseSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
     branchId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Branch' },
     quantity: { type: Number, required: true, default: 0 },
-    reserved: { type: Number, default: 0 },
-    safetyStock: { type: Number, default: 5 },
+    reservedQuantity: { type: Number, default: 0 },
+    availableQuantity: { type: Number, default: 0 },
+    minStockLevel: { type: Number, default: 10 },
+    maxStockLevel: { type: Number, default: 100 },
+    location: String,
     isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
@@ -132,20 +137,27 @@ const OrderItemSchema = new mongoose.Schema({
 });
 
 export const OrderSchema = new mongoose.Schema({
-    orderNumber: { type: String, required: true, unique: true }, // trackingNumber
+    // orderNumber: { type: String, required: true, unique: true }, // Service generates this? Or use _id?
     customerId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     branchId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Branch' },
     items: [OrderItemSchema],
-    totalAmount: { type: Number, required: true },
+    totalPrice: { type: Number, required: true },
+    totalDiscount: { type: Number, default: 0 },
     status: {
         type: String,
-        enum: ['PENDING', 'CONFIRMED', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'PICKUP_READY'],
-        default: 'PENDING'
+        enum: ['PENDING_CONFIRMATION', 'CONFIRMED', 'SHIPPING', 'DELIVERED', 'CANCELLED', 'PICKUP_READY', 'PACKING', 'READY_TO_SHIP', 'FAILED_DELIVERY', 'RETURNING', 'RETURNED'],
+        default: 'PENDING_CONFIRMATION'
     },
-    shippingAddress: AddressSchema,
-    paymentMethod: { type: String, enum: ['COD', 'WALLET', 'VNPAY'], default: 'COD' },
+    shippingAddress: { type: String, required: true },
+    phone: { type: String },
+    paymentMethod: { type: String, enum: ['cod', 'wallet', 'vnpay'], default: 'cod' },
+    paymentStatus: { type: String, default: 'UNPAID' },
     isPaid: { type: Boolean, default: false },
     note: String,
+    trackingNumber: String,
+    shippedAt: Date,
+    deliveredAt: Date,
+    confirmedAt: Date,
 }, { timestamps: true });
 
 export const Order = mongoose.model('Order', OrderSchema);
@@ -153,11 +165,12 @@ export const Order = mongoose.model('Order', OrderSchema);
 // 8. PAYMENTS
 export const PaymentSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Order' },
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    customerId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     amount: { type: Number, required: true },
-    provider: { type: String, enum: ['VNPAY', 'WALLET', 'COD'], required: true },
-    status: { type: String, enum: ['PENDING', 'SUCCESS', 'FAILED'], default: 'PENDING' },
+    method: { type: String, enum: ['vnpay', 'wallet', 'cod'], required: true },
+    status: { type: String, default: 'pending' },
     transactionId: String,
+    completedAt: Date,
 }, { timestamps: true });
 
 export const Payment = mongoose.model('Payment', PaymentSchema);
@@ -184,15 +197,21 @@ export const Wallet = mongoose.model('Wallet', WalletSchema);
 export const PromotionSchema = new mongoose.Schema({
     code: { type: String, required: true, unique: true },
     name: String,
-    type: { type: String, enum: ['voucher', 'campaign'], default: 'voucher' },
-    discountType: { type: String, enum: ['percentage', 'fixed'], required: true },
+    description: String,
+    type: { type: String, enum: ['percentage', 'fixed', 'free_shipping', 'buy_x_get_y'], required: true },
+    // discountType: { type: String, enum: ['percentage', 'fixed'], required: true }, // Removed
     value: { type: Number, required: true },
-    minOrderValue: { type: Number, default: 0 },
-    startAt: Date,
-    endAt: Date,
+    minPurchaseAmount: { type: Number, default: 0 },
+    maxDiscountAmount: Number,
+    startDate: Date,
+    endDate: Date,
     usageLimit: { type: Number, default: 100 },
-    usedCount: { type: Number, default: 0 },
+    usageCount: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    isCodeRequired: { type: Boolean, default: true },
+    applicableProducts: [String],
+    applicableCategories: [String],
+    usedBy: [String],
 }, { timestamps: true });
 
 export const Promotion = mongoose.model('Promotion', PromotionSchema);
@@ -200,11 +219,13 @@ export const Promotion = mongoose.model('Promotion', PromotionSchema);
 // 11. REVIEWS
 export const ReviewSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    customerId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    customerName: String,
     rating: { type: Number, min: 1, max: 5, required: true },
     comment: String,
     images: [String],
-    isActive: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
+    // isActive: { type: Boolean, default: true }, // Removed
 }, { timestamps: true });
 
 export const Review = mongoose.model('Review', ReviewSchema);
@@ -212,14 +233,23 @@ export const Review = mongoose.model('Review', ReviewSchema);
 // 12. CHAT
 const MessageSchema = new mongoose.Schema({
     senderId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-    content: { type: String, required: true },
+    senderName: String,
+    senderRole: String,
+    message: { type: String, required: true },
+    images: [String],
     isRead: { type: Boolean, default: false },
-}, { timestamps: true });
+    sentAt: Date,
+}, { _id: false, timestamps: true });
 
 export const ChatSchema = new mongoose.Schema({
     customerId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-    agentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Can be null initially
-    status: { type: String, enum: ['OPEN', 'CLOSED'], default: 'OPEN' },
+    customerName: String,
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    status: { type: String, enum: ['open', 'closed', 'pending'], default: 'open' },
+    subject: String,
+    lastMessageAt: Date,
+    isReadByEmployee: { type: Boolean, default: false },
+    isReadByCustomer: { type: Boolean, default: false },
     messages: [MessageSchema],
 }, { timestamps: true });
 
@@ -229,9 +259,16 @@ export const Chat = mongoose.model('Chat', ChatSchema);
 export const DisputeSchema = new mongoose.Schema({
     orderId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Order' },
     customerId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    customerName: String,
+    branchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
+    type: { type: String, required: true }, // quality, damage...
     reason: { type: String, required: true },
-    status: { type: String, enum: ['PENDING', 'RESOLVED', 'REJECTED'], default: 'PENDING' },
-    solution: String,
+    description: String,
+    images: [String],
+    status: { type: String, enum: ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'], default: 'OPEN' },
+    resolution: String,
+    refundAmount: Number,
+    resolvedAt: Date,
 }, { timestamps: true });
 
 export const Dispute = mongoose.model('Dispute', DisputeSchema);

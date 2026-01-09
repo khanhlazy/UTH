@@ -18,7 +18,6 @@ export async function seedOrders() {
     const ordersData = [
         // Order 1: Delivered (Alice)
         {
-            orderNumber: 'ORD-001-DELIVERED',
             customerId: alice._id,
             branchId: branch1._id,
             items: [
@@ -27,24 +26,28 @@ export async function seedOrders() {
                     productName: products[0].name,
                     quantity: 1,
                     price: products[0].price,
+                    discount: 0,
                 },
                 {
                     productId: products[1]._id,
                     productName: products[1].name,
                     quantity: 2,
                     price: products[1].price,
+                    discount: 0,
                 }
             ],
-            totalAmount: products[0].price * 1 + products[1].price * 2,
+            totalPrice: products[0].price * 1 + products[1].price * 2,
             status: 'DELIVERED',
-            shippingAddress: alice.addresses[0],
-            paymentMethod: 'VNPAY',
+            shippingAddress: `${alice.addresses[0].street}, ${alice.addresses[0].ward}, ${alice.addresses[0].district}, ${alice.addresses[0].city}`,
+            phone: alice.addresses[0].phone,
+            paymentMethod: 'vnpay',
+            paymentStatus: 'PAID',
             isPaid: true,
-            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+            deliveredAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
         },
-        // Order 2: Pending (Bob)
+        // Order 2: Pending Confirmation (Bob)
         {
-            orderNumber: 'ORD-002-PENDING',
             customerId: bob._id,
             branchId: branch2._id,
             items: [
@@ -53,24 +56,47 @@ export async function seedOrders() {
                     productName: products[2].name,
                     quantity: 1,
                     price: products[2].price,
+                    discount: 0,
                 }
             ],
-            totalAmount: products[2].price,
-            status: 'PENDING',
-            shippingAddress: bob.addresses[0],
-            paymentMethod: 'COD',
+            totalPrice: products[2].price,
+            status: 'PENDING_CONFIRMATION',
+            shippingAddress: `${bob.addresses[0].street}, ${bob.addresses[0].ward}, ${bob.addresses[0].district}, ${bob.addresses[0].city}`,
+            phone: bob.addresses[0].phone,
+            paymentMethod: 'cod',
+            paymentStatus: 'UNPAID',
             isPaid: false,
             createdAt: new Date(), // Now
+        },
+        // Order 3: Shipping (Alice)
+        {
+            customerId: alice._id,
+            branchId: branch1._id,
+            items: [
+                {
+                    productId: products[3]._id,
+                    productName: products[3].name,
+                    quantity: 1,
+                    price: products[3].price,
+                    discount: 0,
+                }
+            ],
+            totalPrice: products[3].price,
+            status: 'SHIPPING',
+            shippingAddress: `${alice.addresses[0].street}, ${alice.addresses[0].ward}, ${alice.addresses[0].district}, ${alice.addresses[0].city}`,
+            phone: alice.addresses[0].phone,
+            paymentMethod: 'vnpay',
+            paymentStatus: 'PAID',
+            isPaid: true,
+            trackingNumber: 'TRK-' + Date.now(),
+            shippedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
         }
     ];
 
     const results = [];
     for (const o of ordersData) {
-        const order = await Order.findOneAndUpdate(
-            { orderNumber: o.orderNumber },
-            o,
-            { upsert: true, new: true }
-        );
+        const order = await Order.create(o);
         results.push(order);
     }
     console.log(`✅ Seeded ${results.length} orders.`);

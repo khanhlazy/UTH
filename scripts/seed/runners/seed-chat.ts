@@ -5,41 +5,51 @@ export async function seedChat() {
     console.log('💬 Seeding Chat...');
 
     const alice = await User.findOne({ email: 'customer1@gmail.com' });
-    const admin = await User.findOne({ email: 'admin@furnimart.com' });
+    const staff = await User.findOne({ email: 'staff_d1@furnimart.com' });
 
-    if (!alice || !admin) {
-        console.warn('⚠️ Skipping Chat seed: Missing Users.');
+    if (!alice || !staff) {
+        console.warn('⚠️ Skipping Chat seed: Missing users.');
         return;
     }
 
     const chatSession = {
         customerId: alice._id,
-        agentId: admin._id,
-        status: 'OPEN',
+        customerName: alice.name,
+        employeeId: staff._id,
+        status: 'open',
+        subject: 'Order inquiry',
+        lastMessageAt: new Date(),
+        isReadByEmployee: false,
+        isReadByCustomer: true,
         messages: [
             {
                 senderId: alice._id,
-                content: 'Hi, when will my order arrive?',
+                senderName: alice.name,
+                senderRole: 'customer',
+                message: 'Hi, when will my order arrive?',
+                images: [],
                 isRead: true,
-                createdAt: new Date(Date.now() - 3600000),
+                sentAt: new Date(Date.now() - 3600000),
             },
             {
-                senderId: admin._id,
-                content: 'Hello Alice, let me check that for you.',
+                senderId: staff._id,
+                senderName: staff.name,
+                senderRole: 'employee',
+                message: 'Hello! Let me check that for you.',
+                images: [],
                 isRead: false,
-                createdAt: new Date(),
+                sentAt: new Date(),
             }
         ]
     };
 
-    // We look for an open chat for this customer
-    const exists = await Chat.findOne({ customerId: alice._id, status: 'OPEN' });
+    // Check if chat already exists
+    const exists = await Chat.findOne({ customerId: alice._id, status: 'open' });
 
     if (!exists) {
         await Chat.create(chatSession);
-        console.log('✅ Created new Chat session.');
+        console.log('✅ Created 1 chat session.');
     } else {
-        // Optionally update items but for chat it's better to just ensure one exists
         console.log('ℹ️ Chat session already exists.');
     }
 }

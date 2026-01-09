@@ -32,16 +32,21 @@ export async function seedInventory() {
         ? generateRandomInt(50, 200)
         : generateRandomInt(10, 50);
 
-      const reserved = generateRandomInt(0, 5); // Some items might be reserved
+      const reservedQuantity = generateRandomInt(0, 5); // Some items might be reserved
+      const availableQuantity = quantity - reservedQuantity;
 
       const inventoryData = {
         productId: product._id,
         branchId: branch._id,
-        quantity,
-        reserved,
         productName: product.name,
-        safetyStock: 5,
+        quantity,
+        reservedQuantity,
+        availableQuantity,
+        minStockLevel: 10,
+        maxStockLevel: 200,
+        location: isCentral ? "Kho trung tâm" : `Kho ${branch.name}`,
         isActive: true,
+        transactions: [], // Empty transactions initially
       };
 
       const inv = await Warehouse.findOneAndUpdate(
