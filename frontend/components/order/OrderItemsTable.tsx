@@ -16,7 +16,7 @@ export default function OrderItemsTable({ items, showImage = true }: OrderItemsT
     item && 
     typeof item.quantity === 'number' && 
     typeof item.price === 'number' &&
-    (item.productId || item.product || item.productName || (item.product as any)?.name)
+    (item.productId || item.product || item.productName || item.product?.name)
   ) || [];
 
   if (!items || items.length === 0 || validItems.length === 0) {

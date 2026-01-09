@@ -8,6 +8,17 @@ type UserUpdatePayload = Partial<User> & {
   lastName?: string;
 };
 
+type AddressDocument = Address & { _id?: string };
+
+type UserWithAddresses = User & {
+  addresses?: AddressDocument[];
+};
+
+const normalizeAddress = (address: AddressDocument): Address => ({
+  ...address,
+  id: address.id ?? address._id,
+});
+
 const normalizeUserUpdate = (data: UserUpdatePayload) => {
   const normalized: UserUpdatePayload = { ...data };
   if (!normalized.name) {
@@ -67,20 +78,16 @@ export const userService = {
 
   getAddresses: async (): Promise<Address[]> => {
     try {
-      const response = await apiClient.get<Address[]>(
+      const response = await apiClient.get<AddressDocument[]>(
         endpoints.users.addresses
       );
-      return response.data.map((addr: any) => ({
-        ...addr,
-        id: addr._id || addr.id,
-      }));
+      return response.data.map(normalizeAddress);
     } catch {
       // Fallback: get addresses from profile
       const user = await userService.getProfile();
-      return (user.addresses || []).map((addr: any) => ({
-        ...addr,
-        id: addr._id || addr.id,
-      }));
+      return (user.addresses || []).map((addr) =>
+        normalizeAddress(addr as AddressDocument)
+      );
     }
   },
 
@@ -88,7 +95,7 @@ export const userService = {
     address: Omit<Address, "id" | "userId" | "createdAt" | "updatedAt">
   ): Promise<Address> => {
     // Send address data directly
-    const response = await apiClient.post<any>(
+    const response = await apiClient.post<UserWithAddresses>(
       endpoints.users.addresses,
       address
     );
@@ -96,12 +103,9 @@ export const userService = {
     const user = response.data;
     if (user && user.addresses && user.addresses.length > 0) {
       const addedAddress = user.addresses[user.addresses.length - 1];
-      return {
-        ...addedAddress,
-        id: (addedAddress as any)._id || addedAddress.id,
-      } as Address;
+      return normalizeAddress(addedAddress);
     }
-    return response.data;
+    return response.data as Address;
   },
 
   updateAddress: async (
@@ -109,7 +113,7 @@ export const userService = {
     address: Partial<Address>
   ): Promise<Address> => {
     // Send address data directly
-    const response = await apiClient.put<any>(
+    const response = await apiClient.put<UserWithAddresses>(
       endpoints.users.address(addressId),
       address
     );
@@ -117,17 +121,14 @@ export const userService = {
     const user = response.data;
     if (user && user.addresses) {
       const updated = user.addresses.find(
-        (addr: any) =>
+        (addr) =>
           addr._id?.toString() === addressId || addr.id === addressId
       );
       if (updated) {
-        return {
-          ...updated,
-          id: (updated as any)._id || updated.id,
-        } as Address;
+        return normalizeAddress(updated);
       }
     }
-    return response.data;
+    return response.data as Address;
   },
 
   deleteAddress: async (addressId: string): Promise<void> => {
@@ -135,7 +136,7 @@ export const userService = {
   },
 
   setDefaultAddress: async (addressId: string): Promise<Address> => {
-    const response = await apiClient.put<any>(
+    const response = await apiClient.put<UserWithAddresses>(
       endpoints.users.setDefaultAddress(addressId),
       {}
     );
@@ -143,16 +144,13 @@ export const userService = {
     const user = response.data;
     if (user && user.addresses) {
       const updated = user.addresses.find(
-        (addr: any) =>
+        (addr) =>
           addr._id?.toString() === addressId || addr.id === addressId
       );
       if (updated) {
-        return {
-          ...updated,
-          id: (updated as any)._id || updated.id,
-        } as Address;
+        return normalizeAddress(updated);
       }
     }
-    return response.data;
+    return response.data as Address;
   },
 };

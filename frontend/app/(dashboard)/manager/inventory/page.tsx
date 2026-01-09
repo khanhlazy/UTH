@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import { branchService } from "@/services/branchService";
@@ -18,6 +18,7 @@ import Badge from "@/components/ui/Badge";
 import Card, { CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { FiBox, FiAlertTriangle, FiPlus, FiEdit } from "react-icons/fi";
 import { toast } from "react-toastify";
+import type { AxiosError } from "axios";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
@@ -48,7 +49,6 @@ export default function ManagerInventoryPage() {
   const [adjustQuantity, setAdjustQuantity] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
   const [addProductModalOpen, setAddProductModalOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [newQuantity, setNewQuantity] = useState("");
   const [newLocation, setNewLocation] = useState("");
@@ -72,7 +72,7 @@ export default function ManagerInventoryPage() {
         return warehouseInventory.map((item) => ({
           id: item.id,
           productId: item.productId,
-          product: item.product || { id: item.productId, name: (item as any).productName || "N/A" },
+          product: item.product || { id: item.productId, name: item.product?.name || "N/A" },
           quantity: item.quantity || 0,
           reservedQuantity: item.reservedQuantity || 0,
           availableQuantity: item.availableQuantity || 0,
@@ -97,12 +97,7 @@ export default function ManagerInventoryPage() {
     enabled: addProductModalOpen,
   });
 
-  // Update products list when modal opens and data is available
-  useEffect(() => {
-    if (addProductModalOpen && productsData?.items) {
-      setProducts(productsData.items);
-    }
-  }, [addProductModalOpen, productsData]);
+  const availableProducts = productsData?.items || [];
 
   const adjustStockMutation = useMutation({
     mutationFn: ({ itemId, quantity, reason }: { itemId: string; quantity: number; reason?: string }) =>
@@ -139,8 +134,9 @@ export default function ManagerInventoryPage() {
       setNewQuantity("");
       setNewLocation("");
     },
-    onError: (error: any) => {
-      const errorMessage = error?.response?.data?.message || "Không thể thêm sản phẩm vào kho";
+    onError: (error: AxiosError<{ message?: string }>) => {
+      const errorMessage =
+        error?.response?.data?.message || "Không thể thêm sản phẩm vào kho";
       toast.error(errorMessage);
     },
   });
@@ -290,9 +286,6 @@ export default function ManagerInventoryPage() {
             onClick={async () => {
               setAddProductModalOpen(true);
               await refetchProducts();
-              if (productsData?.items) {
-                setProducts(productsData.items);
-              }
             }}
           >
             <FiPlus className="w-4 h-4 mr-2" />
@@ -458,12 +451,12 @@ export default function ManagerInventoryPage() {
                 className="w-full px-3 py-2 border border-stone-300 rounded-lg"
                 value={selectedProduct?.id || ""}
                 onChange={(e) => {
-                  const product = products.find((p) => p.id === e.target.value);
+                  const product = availableProducts.find((p) => p.id === e.target.value);
                   setSelectedProduct(product || null);
                 }}
               >
                 <option value="">Chọn sản phẩm...</option>
-                {products
+                {availableProducts
                   .filter((p) => !data?.some((item) => item.productId === p.id))
                   .map((product) => (
                     <option key={product.id} value={product.id}>
@@ -471,7 +464,7 @@ export default function ManagerInventoryPage() {
                     </option>
                   ))}
               </select>
-              {productsData && products.filter((p) => !data?.some((item) => item.productId === p.id)).length === 0 && (
+              {productsData && availableProducts.filter((p) => !data?.some((item) => item.productId === p.id)).length === 0 && (
                 <p className="text-sm text-stone-500 mt-2">Tất cả sản phẩm đã có trong kho</p>
               )}
             </div>
