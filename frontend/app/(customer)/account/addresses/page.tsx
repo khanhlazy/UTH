@@ -123,7 +123,10 @@ export default function AddressesPage() {
 
   const onSubmit = (data: AddressForm) => {
     // Backend AddressDto requires: name, phone, street, ward, district, city, isDefault
-    const addressData: Partial<Address> = {
+    const addressData: Omit<
+      Address,
+      "id" | "userId" | "createdAt" | "updatedAt"
+    > = {
       name: data.fullName,
       phone: data.phone,
       street: data.address,
