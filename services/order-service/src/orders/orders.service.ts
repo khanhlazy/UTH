@@ -80,6 +80,13 @@ export class OrdersService {
       finalTotalPrice = totalPrice - createOrderDto.discount;
     }
 
+    const rawPaymentMethod = createOrderDto.paymentMethod || 'cod';
+    const normalizedPaymentMethod = rawPaymentMethod.toLowerCase();
+    const allowedPaymentMethods = new Set(['cod', 'stripe', 'momo', 'vnpay', 'wallet']);
+    if (!allowedPaymentMethods.has(normalizedPaymentMethod)) {
+      throw new BadRequestException('Phương thức thanh toán không hợp lệ');
+    }
+
     // 0.1: Order bắt buộc có branch_id - Tìm chi nhánh có đủ hàng
     let selectedBranchId: string | undefined;
     
@@ -244,7 +251,7 @@ export class OrdersService {
       totalDiscount,
       shippingAddress: createOrderDto.shippingAddress,
       phone: createOrderDto.phone,
-      paymentMethod: createOrderDto.paymentMethod || 'cod',
+      paymentMethod: normalizedPaymentMethod,
       paymentStatus: 'UNPAID', // 0.3: Payment status
       notes: createOrderDto.notes,
       promotionId: createOrderDto.promotionId,
