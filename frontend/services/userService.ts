@@ -43,10 +43,17 @@ export const userService = {
     return response.data;
   },
 
-  getUsers: async (role?: string): Promise<User[]> => {
-    const params = role ? `?role=${role}` : "";
+  getUsers: async (filters: { role?: string; branchId?: string } | string = {}): Promise<User[]> => {
+    const params = new URLSearchParams();
+    if (typeof filters === 'string') {
+      params.append('role', filters);
+    } else {
+      if (filters.role) params.append('role', filters.role);
+      if (filters.branchId) params.append('branchId', filters.branchId);
+    }
+    const queryString = params.toString() ? `?${params.toString()}` : "";
     const response = await apiClient.get<User[]>(
-      `${endpoints.users.list}${params}`
+      `${endpoints.users.list}${queryString}`
     );
     return response.data;
   },
