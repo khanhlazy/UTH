@@ -55,7 +55,7 @@ export class Order {
   })
   status!: string;
 
-  @Prop({ default: 'cod', enum: ['cod', 'stripe', 'momo', 'vnpay'] })
+  @Prop({ default: 'cod', enum: ['cod', 'stripe', 'momo', 'vnpay', 'wallet'] })
   paymentMethod!: string;
 
   // Payment status (0.3): UNPAID, PAID, REFUND_PENDING, REFUNDED, FAILED
