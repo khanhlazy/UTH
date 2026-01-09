@@ -553,6 +553,54 @@ export class WalletService {
     }).sort({ createdAt: -1 }).exec();
   }
 
+  async getAllWallets(filters?: any): Promise<{
+    items: WalletDocument[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const query: Record<string, unknown> = {};
+
+    if (filters?.userId) {
+      query.userId = filters.userId;
+    }
+
+    if (filters?.isActive !== undefined) {
+      query.isActive = filters.isActive === 'true' || filters.isActive === true;
+    }
+
+    if (filters?.minBalance !== undefined) {
+      query.balance = { $gte: Number(filters.minBalance) };
+    }
+
+    if (filters?.maxBalance !== undefined) {
+      query.balance = {
+        ...(query.balance as Record<string, unknown> | undefined),
+        $lte: Number(filters.maxBalance),
+      };
+    }
+
+    const limit = Math.min(parseInt(filters?.limit, 10) || 20, 100);
+    const page = Math.max(parseInt(filters?.page, 10) || 1, 1);
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.walletModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.walletModel.countDocuments(query).exec(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
   async getTransactionByPaymentId(paymentId: string): Promise<WalletTransaction | null> {
     return this.transactionModel.findOne({ paymentId }).exec();
   }
