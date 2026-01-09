@@ -105,7 +105,8 @@ export const userService = {
       const addedAddress = user.addresses[user.addresses.length - 1];
       return normalizeAddress(addedAddress);
     }
-    return response.data as Address;
+    // Fallback: return empty address if extraction failed
+    throw new Error("Failed to add address");
   },
 
   updateAddress: async (
@@ -120,7 +121,7 @@ export const userService = {
     // Backend returns full user object, find the updated address
     const user = response.data;
     if (user && user.addresses) {
-      const updated = user.addresses.find(
+      const updated = (user.addresses as AddressDocument[]).find(
         (addr) =>
           addr._id?.toString() === addressId || addr.id === addressId
       );
@@ -128,7 +129,8 @@ export const userService = {
         return normalizeAddress(updated);
       }
     }
-    return response.data as Address;
+    // Fallback: return empty address if extraction failed
+    throw new Error("Failed to update address");
   },
 
   deleteAddress: async (addressId: string): Promise<void> => {
@@ -143,7 +145,7 @@ export const userService = {
     // Backend returns full user object, find the updated address
     const user = response.data;
     if (user && user.addresses) {
-      const updated = user.addresses.find(
+      const updated = (user.addresses as AddressDocument[]).find(
         (addr) =>
           addr._id?.toString() === addressId || addr.id === addressId
       );
@@ -151,6 +153,7 @@ export const userService = {
         return normalizeAddress(updated);
       }
     }
-    return response.data as Address;
+    // Fallback: return empty address if extraction failed
+    throw new Error("Failed to set default address");
   },
 };

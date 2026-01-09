@@ -62,7 +62,7 @@ export default function ChatPage() {
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-secondary-50/30" ref={scrollRef}>
                     {messages && messages.length > 0 ? (
-                        messages.map((msg) => {
+                        messages.map((msg, index) => {
                             const isMe = msg.senderId === user?.id;
                             const messageText = msg.content ?? msg.message;
                             const messageTimestamp = msg.createdAt ?? msg.sentAt;
@@ -73,7 +73,7 @@ export default function ChatPage() {
                                 })
                               : "";
                             return (
-                                <div key={msg.id} className={cn("flex", isMe ? "justify-end" : "justify-start")}>
+                                <div key={`msg-${index}-${msg.sentAt}`} className={cn("flex", isMe ? "justify-end" : "justify-start")}>
                                     <div className={cn(
                                         "max-w-[70%] rounded-2xl px-4 py-3 shadow-sm",
                                         isMe

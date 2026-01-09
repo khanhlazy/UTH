@@ -31,7 +31,7 @@ import type { AxiosError } from "axios";
 
 type DisputeForm = {
   orderId: string;
-  type: string;
+  type: "quality" | "damage" | "missing" | "wrong_item" | "delivery" | "payment" | "other" | "return" | "warranty" | "assembly";
   reason: string;
   description: string;
 };
@@ -93,7 +93,7 @@ export default function OrderDetailPage() {
 
   // Check if order can be cancelled (2: chỉ khi chưa PACKING)
   const canCancel = order && (
-    order.status === "PENDING_CONFIRMATION" || 
+    order.status === "PENDING_CONFIRMATION" ||
     order.status === "pending" ||
     order.status === "CONFIRMED" ||
     order.status === "confirmed"
@@ -264,15 +264,15 @@ export default function OrderDetailPage() {
                           order.paymentStatus === "paid"
                             ? "success"
                             : order.paymentStatus === "pending"
-                            ? "warning"
-                            : "danger"
+                              ? "warning"
+                              : "danger"
                         }
                       >
                         {order.paymentStatus === "paid"
                           ? "Đã thanh toán"
                           : order.paymentStatus === "pending"
-                          ? "Chờ thanh toán"
-                          : "Thất bại"}
+                            ? "Chờ thanh toán"
+                            : "Thất bại"}
                       </Badge>
                     </div>
                     {order.branch && (
@@ -404,7 +404,7 @@ export default function OrderDetailPage() {
       >
         <form onSubmit={handleSubmit(onSubmitDispute)} className="space-y-4">
           <input type="hidden" {...register("orderId")} value={orderId} />
-          
+
           <div>
             <label className="block text-sm font-medium text-secondary-700 mb-2">
               Loại yêu cầu

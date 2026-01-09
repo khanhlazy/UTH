@@ -92,10 +92,6 @@ export default function HomePage() {
                 {heroSettings?.subtitle ||
                   "Thiết kế tinh giản, vật liệu bền vững, nâng tầm mọi không gian sống."}
               </p>
-              <p className="text-sm text-secondary-200 max-w-2xl">
-                {heroSettings?.description ||
-                  "Khám phá bộ sưu tập nội thất độc quyền, phối cảnh hiện đại và giải pháp tối ưu diện tích."}
-              </p>
               <div className="flex flex-wrap gap-4">
                 <Link href={heroButtonLink}>
                   <Button size="lg" className="px-8">
@@ -401,9 +397,8 @@ export default function HomePage() {
             ].map((src, index) => (
               <div
                 key={src}
-                className={`relative overflow-hidden rounded-2xl ${
-                  index === 0 ? "row-span-2 h-full" : "h-40 md:h-48"
-                }`}
+                className={`relative overflow-hidden rounded-2xl ${index === 0 ? "row-span-2 h-full" : "h-40 md:h-48"
+                  }`}
               >
                 <Image
                   src={src}

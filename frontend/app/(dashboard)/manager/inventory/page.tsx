@@ -72,7 +72,7 @@ export default function ManagerInventoryPage() {
         return warehouseInventory.map((item) => ({
           id: item.id,
           productId: item.productId,
-          product: item.product || { id: item.productId, name: item.product?.name || "N/A" },
+          product: item.product || { id: item.productId, name: "N/A" },
           quantity: item.quantity || 0,
           reservedQuantity: item.reservedQuantity || 0,
           availableQuantity: item.availableQuantity || 0,

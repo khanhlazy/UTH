@@ -139,6 +139,12 @@ export default function CheckoutPage() {
         const orderId = data.id || data._id;
         const amount = data.totalPrice || totalAmount;
 
+        if (!orderId) {
+          toast.error("Không thể tạo thanh toán: Thiếu mã đơn hàng");
+          router.push("/orders");
+          return;
+        }
+
         try {
           notifications.payment.vnpayRedirect();
           const response = await paymentService.createVnpayUrl({
@@ -148,10 +154,11 @@ export default function CheckoutPage() {
           });
           window.location.href = response.paymentUrl;
           return;
-        } catch (error: AxiosError<{ message?: string }>) {
+        } catch (error) {
+          const err = error as AxiosError<{ message?: string }>;
           toast.error(
-            error?.response?.data?.message ||
-              "Không thể tạo thanh toán VNPay, vui lòng thử lại"
+            err?.response?.data?.message ||
+            "Không thể tạo thanh toán VNPay, vui lòng thử lại"
           );
         }
       }
@@ -324,9 +331,8 @@ export default function CheckoutPage() {
                               {b.name} -{" "}
                               {typeof b.address === "string"
                                 ? b.address
-                                : `${b.address?.street || ""}, ${
-                                    b.address?.city || ""
-                                  }`}
+                                : `${b.address?.street || ""}, ${b.address?.city || ""
+                                }`}
                             </option>
                           ))}
                         </select>
@@ -574,7 +580,7 @@ export default function CheckoutPage() {
                         className={cn(
                           "flex gap-4 p-4 hover:bg-secondary-50 transition-colors",
                           idx !== items.length - 1 &&
-                            "border-b border-secondary-100"
+                          "border-b border-secondary-100"
                         )}
                       >
                         <div className="w-16 h-16 bg-secondary-100 rounded-lg relative shrink-0 border border-secondary-200">
