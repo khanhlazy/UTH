@@ -62,16 +62,7 @@ FurniMart là nền tảng thương mại điện tử chuyên về nội thất
 
 ### Documentation
 
-📚 **8 Comprehensive Guides:**
-
-- [FRONTEND_COMPLETE.md](./FRONTEND_COMPLETE.md) - Final delivery report
-- [FRONTEND_STATUS.md](./FRONTEND_STATUS.md) - Project status & statistics
-- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Deployment instructions
-- [FRONTEND_ARCHITECTURE.md](./FRONTEND_ARCHITECTURE.md) - System design
-- [FRONTEND_IMPLEMENTATION_GUIDE.md](./FRONTEND_IMPLEMENTATION_GUIDE.md) - Service details
-- [COMPONENTS_AND_PAGES_GUIDE.md](./COMPONENTS_AND_PAGES_GUIDE.md) - Component patterns
-- [COMPLETE_FRONTEND_GUIDE.md](./COMPLETE_FRONTEND_GUIDE.md) - Development guide
-- [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) - Quick lookup
+📚 Tài liệu dự án hiện được tổng hợp trong README này.
 
 ### Getting Started Frontend
 
