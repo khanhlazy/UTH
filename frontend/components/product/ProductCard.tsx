@@ -51,7 +51,7 @@ export default function ProductCard({
         productId: product.id,
         product,
         quantity: 1,
-        price: product.price,
+        price: discountedPrice,
       });
       await cartService.addToCart(product.id, 1);
       toast.success("Đã thêm vào giỏ hàng");
@@ -66,13 +66,16 @@ export default function ProductCard({
   );
   const hasMultipleImages = images.length > 1;
 
-  // Calculate discount percentage
-  const discountPercent =
-    product.discount && product.discount > 0
-      ? Math.round(
-          (product.discount / (product.price + product.discount)) * 100
-        )
-      : 0;
+  const hasDiscount = Boolean(
+    product.discount && product.discount > 0 && product.price > 0
+  );
+  const discountedPrice = hasDiscount
+    ? Math.max(product.price - (product.discount || 0), 0)
+    : product.price;
+  // Calculate discount percentage based on original price
+  const discountPercent = hasDiscount
+    ? Math.round(((product.discount || 0) / product.price) * 100)
+    : 0;
 
   return (
     <Link
@@ -186,11 +189,11 @@ export default function ProductCard({
           <div className="mt-auto">
             <div className="flex items-baseline gap-2 mb-2">
               <span className="text-lg font-bold text-secondary-900">
-                {formatCurrency(product.price)}
+                {formatCurrency(discountedPrice)}
               </span>
-              {product.discount && product.discount > 0 && (
+              {hasDiscount && (
                 <span className="text-sm text-secondary-400 line-through">
-                  {formatCurrency(product.price + product.discount)}
+                  {formatCurrency(product.price)}
                 </span>
               )}
             </div>

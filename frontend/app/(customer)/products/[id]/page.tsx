@@ -190,7 +190,7 @@ export default function ProductDetailPage() {
         product,
         quantity,
         branchId: selectedBranch || undefined,
-        price: product.price,
+        price: discountedPrice,
       });
       await cartService.addToCart(
         product.id,
@@ -219,6 +219,16 @@ export default function ProductDetailPage() {
         }}
       />
     );
+
+  const hasDiscount = Boolean(
+    product.discount && product.discount > 0 && product.price > 0
+  );
+  const discountedPrice = hasDiscount
+    ? Math.max(product.price - (product.discount || 0), 0)
+    : product.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((product.discount || 0) / product.price) * 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -266,16 +276,13 @@ export default function ProductDetailPage() {
                     Best Seller
                   </Badge>
                 )}
-                {product.discount && product.discount > 0 && (
+                {hasDiscount && (
                   <Badge
                     variant="danger"
                     className="tracking-wider text-[10px] uppercase font-bold px-2 py-0.5"
                   >
                     -
-                    {Math.round(
-                      (product.discount / (product.price + product.discount)) *
-                        100
-                    )}
+                    {discountPercent}
                     %
                   </Badge>
                 )}
@@ -299,11 +306,11 @@ export default function ProductDetailPage() {
 
               <div className="flex items-baseline gap-4 mb-6">
                 <span className="text-4xl font-bold text-primary-700 tracking-tight">
-                  {formatCurrency(product.price)}
+                  {formatCurrency(discountedPrice)}
                 </span>
-                {product.discount && product.discount > 0 && (
+                {hasDiscount && (
                   <span className="text-xl text-secondary-400 line-through decoration-secondary-300">
-                    {formatCurrency(product.price + product.discount)}
+                    {formatCurrency(product.price)}
                   </span>
                 )}
               </div>
