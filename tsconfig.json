@@ -19,7 +19,7 @@
     ]
   },
   "files": [
-    "scripts/seed.ts"
+    "scripts/seed/index.ts"
   ],
   "exclude": [
     "node_modules",
