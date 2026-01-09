@@ -18,8 +18,10 @@ import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { branchService } from "@/services/branchService";
 import { orderService } from "@/services/orderService";
+import { paymentService } from "@/services/paymentService";
 import { userService } from "@/services/userService";
 import { formatCurrency } from "@/lib/format";
+import { notifications } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import type { Address } from "@/lib/types";
 
@@ -87,8 +89,30 @@ export default function CheckoutPage() {
   // Stock validation is handled by backend during order creation
   const createOrderMutation = useMutation({
     mutationFn: orderService.createOrder,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       clearCart();
+
+      if (paymentMethod === "VNPAY") {
+        const orderId = data.id || data._id;
+        const amount = data.totalPrice || totalAmount;
+
+        try {
+          notifications.payment.vnpayRedirect();
+          const response = await paymentService.createVnpayUrl({
+            orderId,
+            amount,
+            orderDescription: `Thanh toan don hang ${orderId}`,
+          });
+          window.location.href = response.paymentUrl;
+          return;
+        } catch (error: any) {
+          toast.error(
+            error?.response?.data?.message ||
+              "Không thể tạo thanh toán VNPay, vui lòng thử lại"
+          );
+        }
+      }
+
       toast.success("Đặt hàng thành công!");
       router.push(`/orders/${data.id || data._id}`);
     },
